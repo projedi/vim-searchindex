@@ -104,8 +104,13 @@ function! s:StarSearch(cmd)
   " reimplement star commands using '/' and '?'
   let search_dir = (a:cmd == '*' || a:cmd == 'g*') ? '/' : '?'
   let case_char = (g:searchindex_star_case ? '\C' : '\c')
-  let [open_delim, close_delim] = (a:cmd =~ 'g.' ? ['', ''] : ['\<', '\>'])
-  let search_term = open_delim . "\<C-R>\<C-W>" . close_delim
+  " let [open_delim, close_delim] = (a:cmd =~ 'g.' ? ['', ''] : ['\<', '\>'])
+  " let search_term = open_delim . "\<C-R>\<C-W>" . close_delim
+  " Taken from https://github.com/bronson/vim-visual-star-search
+  let temp = @s
+  norm! gv"sy
+  let search_term = '\V' . substitute(escape(@s, search_dir.'\'), '\n', '\\n', 'g')
+  let @s = temp
   return search_dir . search_term . case_char . "\<CR>"
 endfunction
 
