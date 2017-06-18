@@ -63,6 +63,11 @@ map  #  <Plug>ImprovedStar_#<Plug>SearchIndex
 map  g* <Plug>ImprovedStar_g*<Plug>SearchIndex
 map  g# <Plug>ImprovedStar_g#<Plug>SearchIndex
 
+" Taken from https://github.com/bronson/vim-visual-star-search
+" replace vim's built-in visual * and # behavior
+xnoremap * :<C-u>call VisualStarSearchSet('/')<CR>/<C-R>=@/<CR><CR><Plug>SearchIndex
+xnoremap # :<C-u>call VisualStarSearchSet('?')<CR>?<C-R>=@/<CR><CR><Plug>SearchIndex
+
 noremap <silent> <expr> <Plug>ImprovedStar_*  <SID>StarSearch('*')
 noremap <silent> <expr> <Plug>ImprovedStar_#  <SID>StarSearch('#')
 noremap <silent> <expr> <Plug>ImprovedStar_g* <SID>StarSearch('g*')
@@ -94,6 +99,19 @@ endif
 
 " Implementation details.
 
+" Taken from https://github.com/bronson/vim-visual-star-search
+function! VisualStarSearchSet(cmdtype,...)
+  let temp = @"
+  normal! gvy
+  if !a:0 || a:1 != 'raw'
+    let @" = escape(@", a:cmdtype.'\*')
+  endif
+  let @/ = substitute(@", '\n', '\\n', 'g')
+  let @/ = substitute(@/, '\[', '\\[', 'g')
+  let @/ = substitute(@/, '\~', '\\~', 'g')
+  let @" = temp
+endfunction
+
 function! s:StarSearch(cmd)
   if !g:searchindex_improved_star | return a:cmd | endif
 
@@ -104,13 +122,8 @@ function! s:StarSearch(cmd)
   " reimplement star commands using '/' and '?'
   let search_dir = (a:cmd == '*' || a:cmd == 'g*') ? '/' : '?'
   let case_char = (g:searchindex_star_case ? '\C' : '\c')
-  " let [open_delim, close_delim] = (a:cmd =~ 'g.' ? ['', ''] : ['\<', '\>'])
-  " let search_term = open_delim . "\<C-R>\<C-W>" . close_delim
-  " Taken from https://github.com/bronson/vim-visual-star-search
-  let temp = @s
-  norm! gv"sy
-  let search_term = '\V' . substitute(escape(@s, search_dir.'\'), '\n', '\\n', 'g')
-  let @s = temp
+  let [open_delim, close_delim] = (a:cmd =~ 'g.' ? ['', ''] : ['\<', '\>'])
+  let search_term = open_delim . "\<C-R>\<C-W>" . close_delim
   return search_dir . search_term . case_char . "\<CR>"
 endfunction
 
